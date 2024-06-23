@@ -1,32 +1,27 @@
-#!/usr/bin/env nextflow
-
-params.reads = 'results/demultiplexing/'
-params.reference = 'data/reference/reference_db.fasta'
-params.outdir = 'results/alignment/'
-
 process align_reads {
     input:
-    path reads from params.reads
-    path reference from params.reference
+    path demultiplexed_reads
+    path reference
 
     output:
-    path params.outdir
+    path 'results/alignment/', emit: aligned_reads
 
     script:
     """
     # Create the output directory if it doesn't exist
-    mkdir -p $params.outdir
+    mkdir -p $params.alignment_out_dir
 
     # Align the reads to the reference database using minimap2
-    minimap2 -ax map-ont $reference $reads > $params.outdir/aligned_reads.sam
+    # The -ax map-ont parameter specifies the alignment mode for Oxford Nanopore data
+    minimap2 -ax map-ont $reference $demultiplexed_reads > $params.alignment_out_dir/aligned_reads.sam
 
     # Convert the SAM file to BAM format
-    samtools view -b -o $params.outdir/aligned_reads.bam $params.outdir/aligned_reads.sam
+    samtools view -b -o $params.alignment_out_dir/aligned_reads.bam $params.alignment_out_dir/aligned_reads.sam
 
     # Sort the BAM file
-    samtools sort -o $params.outdir/aligned_reads_sorted.bam $params.outdir/aligned_reads.bam
+    samtools sort -o $params.alignment_out_dir/aligned_reads_sorted.bam $params.alignment_out_dir/aligned_reads.bam
 
     # Index the sorted BAM file
-    samtools index $params.outdir/aligned_reads_sorted.bam
+    samtools index $params.alignment_out_dir/aligned_reads_sorted.bam
     """
 }

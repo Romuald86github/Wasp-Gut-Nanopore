@@ -11,58 +11,10 @@ workflow {
     analyze_results(align_reads.out.aligned_reads)
 }
 
-process preprocess_reads {
-    input:
-    path raw_reads
-
-    output:
-    path 'results/preprocessing/filtered_reads.fastq.gz', emit: filtered_reads
-
-    script:
-    """
-    bash scripts/preprocess.sh $raw_reads results/preprocessing/filtered_reads.fastq.gz
-    """
-}
-
-process basecall_reads {
-    input:
-    path filtered_reads
-
-    output:
-    path 'results/basecalling/', emit: basecalled_reads
-
-    script:
-    """
-    bash scripts/basecalling.sh $filtered_reads results/basecalling/
-    """
-}
-
-process demultiplex_reads {
-    input:
-    path basecalled_reads
-
-    output:
-    path 'results/demultiplexing/', emit: demultiplexed_reads
-
-    script:
-    """
-    bash scripts/demultiplex.sh $basecalled_reads results/demultiplexing/
-    """
-}
-
-process align_reads {
-    input:
-    path demultiplexed_reads
-    path reference
-
-    output:
-    path 'results/alignment/', emit: aligned_reads
-
-    script:
-    """
-    nextflow scripts/align_reads.nf --reads $demultiplexed_reads --reference $reference --outdir results/alignment/
-    """
-}
+include { preprocess_reads } from './scripts/preprocess.nf'
+include { basecall_reads } from './scripts/basecalling.sh'
+include { demultiplex_reads } from './scripts/demultiplex.sh'
+include { align_reads } from './scripts/align_reads.nf'
 
 process analyze_results {
     input:
@@ -73,9 +25,12 @@ process analyze_results {
 
     script:
     """
+    # Create the output directory if it doesn't exist
+    mkdir -p $params.analysis_out_dir
+
     # Run analysis scripts
-    Rscript scripts/analysis/species_identification.R results/alignment/ results/analysis/species_identification/
-    Rscript scripts/analysis/species_abundance.R results/alignment/ results/analysis/species_abundance/
-    Rscript scripts/analysis/OTUs.R results/alignment/ results/analysis/OTUs/
+    Rscript scripts/analysis/species_identification.R $aligned_reads $params.analysis_out_dir/species_identification/
+    Rscript scripts/analysis/species_abundance.R $aligned_reads $params.analysis_out_dir/species_abundance/
+    Rscript scripts/analysis/OTUs.R $aligned_reads $params.analysis_out_dir/OTUs/
     """
 }
