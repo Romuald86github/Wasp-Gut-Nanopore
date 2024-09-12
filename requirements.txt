@@ -1,13 +1,1 @@
-# Requirements for preprocessing and bioinformatics analysis
-NanoFilt==2.8.0
-Porechop==0.2.4
-biopython==1.78
-pandas==1.2.3
-scipy==1.6.1
-scikit-learn==0.24.1
-numpy==1.20.1
-matplotlib==3.3.4
-seaborn==0.11.1
-seqtk==1.3
-minimap2==2.17
-samtools==1.10
+
